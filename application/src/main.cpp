@@ -4,9 +4,11 @@
 
 #include <mysql/mysql.h>
 #include <mysqlpp/mysql++.h>
-#include <pistache/endpoint.h>
+// #include <pistache/endpoint.h>
+// using namespace Pistache;
 
-using namespace Pistache;
+#include <drogon/drogon.h>
+using namespace drogon;
 
 #include <iomanip>
 #include <iostream>
@@ -157,16 +159,16 @@ show_tables(mysqlpp::Connection& con)
 	show_table_info(con, tables);
 }
 
-class HelloHandler : public Http::Handler
-{
-public:
-    HTTP_PROTOTYPE(HelloHandler)
+// class HelloHandler : public Http::Handler
+// {
+// public:
+//     HTTP_PROTOTYPE(HelloHandler)
 
-    void onRequest(const Http::Request& /*request*/, Http::ResponseWriter response) override
-    {
-        response.send(Pistache::Http::Code::Ok, "Hello World\n");
-    }
-};
+//     void onRequest(const Http::Request& /*request*/, Http::ResponseWriter response) override
+//     {
+//         response.send(Pistache::Http::Code::Ok, "Hello World\n");
+//     }
+// };
 
 int main( int argc, char **argv ) {
 
@@ -293,15 +295,35 @@ int main( int argc, char **argv ) {
   std::cout << "Wainting for enter" << std::endl;
   std::cin.get(); // >> key;
 
-  Pistache::Address addr(Pistache::Ipv4::any(), Pistache::Port(9080));
-  auto opts = Pistache::Http::Endpoint::options().threads(1);
 
-  Http::Endpoint server(addr);
-  server.init(opts);
-  server.setHandler(Http::make_handler<HelloHandler>());
+  app().registerHandler(
+                         "/",
+                         []( const HttpRequestPtr &,
+                             std::function<void(const HttpResponsePtr &)> &&callback ) {
 
-  std::cout << "Server listening in port 9080" << std::endl;
-  server.serve();
+                              auto resp = HttpResponse::newHttpResponse();
+                              resp->setBody("Hello, World! from drogon library");
+                              callback(resp);
+                              
+                            },
+                         {Get}
+                       );
+
+  // Ask Drogon to listen on 127.0.0.1 port 8848. Drogon supports listening
+  // on multiple IP addresses by adding multiple listeners. For example, if
+  // you want the server also listen on 127.0.0.1 port 5555. Just add another
+  // line of addListener("127.0.0.1", 5555)
+  LOG_INFO << "Server running on 127.0.0.1:9080";
+  app().addListener("127.0.0.1", 9080).run();
+  // Pistache::Address addr(Pistache::Ipv4::any(), Pistache::Port(9080));
+  // auto opts = Pistache::Http::Endpoint::options().threads(1);
+
+  // Http::Endpoint server(addr);
+  // server.init(opts);
+  // server.setHandler(Http::make_handler<HelloHandler>());
+
+  // std::cout << "Server listening in port 9080" << std::endl;
+  // server.serve();
 
   return 0;
 

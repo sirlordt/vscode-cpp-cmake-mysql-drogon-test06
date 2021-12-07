@@ -8,4 +8,9 @@ add_subdirectory(lib_a)     # look in lib_a subdirectory for CMakeLists.txt to p
 add_subdirectory(lib_b)     # look in lib_a subdirectory for CMakeLists.txt to process
 add_subdirectory(mysql)     # look in lib_a subdirectory for CMakeLists.txt to process
 add_subdirectory(mysqlpp)   # look in lib_a subdirectory for CMakeLists.txt to process
-add_subdirectory(pistache)   # look in lib_a subdirectory for CMakeLists.txt to process
+add_subdirectory(trantor)   # look in lib_a subdirectory for CMakeLists.txt to process
+add_subdirectory(drogon)   # look in lib_a subdirectory for CMakeLists.txt to process
+
+# Not used
+#add_subdirectory(jsoncpp)   # look in lib_a subdirectory for CMakeLists.txt to process
+#add_subdirectory(pistache)   # look in lib_a subdirectory for CMakeLists.txt to process

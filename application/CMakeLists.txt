@@ -53,9 +53,15 @@ target_link_libraries(main PRIVATE mysqlpp)
 
 #********* libpistache *********
 
-target_link_libraries(main PRIVATE pistache)
+#target_link_libraries(main PRIVATE pistache)
 
 #********* libpistache *********
+
+#********* libdrogon *********
+
+target_link_libraries(main PRIVATE drogon)
+
+#********* libdrogon *********
 
 # VERY Important made your executable full static linked like golang
 target_link_options(main PRIVATE --static -static-libgcc -static-libstdc++)
