@@ -10,6 +10,9 @@
 #include <drogon/drogon.h>
 using namespace drogon;
 
+#include <fmt/printf.h>
+#include <nlohmann/json.hpp>
+
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -290,11 +293,28 @@ int main( int argc, char **argv ) {
 
   mysql_close( con );
 
+
+    nlohmann::json json = {
+        {"pi", 3.14},
+        {"happy", true},
+        {"name", "Kuba"},
+        {"nothing", nullptr},
+        {"answer", {
+            {"everything", 42}
+        }},
+        {"list", {1, 2, 3}},
+        {"object", {
+            {"currency", "PLN"},
+            {"value", 100.0}
+        }}
+    };
+
+    fmt::print("JSON: {}\n", json);
+
   //std::string key;
 
   std::cout << "Wainting for enter" << std::endl;
   std::cin.get(); // >> key;
-
 
   app().registerHandler(
                          "/",

@@ -5,14 +5,47 @@ add_subdirectory(src/modules/b) # look in module_a subdirectory for CMakeLists.t
 # so let's require it now.
 cmake_minimum_required(VERSION 3.11-3.18)
 
+#message("CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
 project(main)
 
-message( STATUS "Compiler path: ${CMKE_CXX_CMPILER}" )
+#message( "Compiler path: ${CMKE_CXX_CMPILER}" )
 
 file(GLOB SOURCES "src/*.cpp")
 
 #Come from folder extern_libs/mysqlpp/CMakeLists.txt
 get_property(MYSQLPP_OBJS GLOBAL PROPERTY MYSQLPP_OBJS )
+
+# ***************** Conan Integration ***************
+
+# ***** OBSOLETE NO NEEDED. Now using conan_cmake. *****
+# Later of save this file. Remember execute 
+# cd ./.build/debug && conan install ../.. && cd ../.. 
+# (Create the conanbuildinfo.cmake inside of folder ./.build/debug)
+# ***** OBSOLETE NO NEEDED. Now using conan_cmake. *****
+
+# Download automatically, you can also just copy the conan.cmake file
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+                  "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+set( CONAN_DISABLE_CHECK_COMPILER  1 )
+
+conan_cmake_run(REQUIRES nlohmann_json/3.9.1
+                BASIC_SETUP)
+
+conan_cmake_run(REQUIRES fmt/7.1.3
+                BASIC_SETUP
+#                SETTINGS compiler.version=9.3;
+                BUILD missing)
+
+#include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+#conan_basic_setup()
+
+# ***************** Conan Integration ***************
 
 add_executable(main ${SOURCES} ${MYSQLPP_OBJS})
 #add_executable(main src/main.cpp)
@@ -34,11 +67,24 @@ target_link_libraries(main PRIVATE mysql_services)
 
   #========> Dependencies from libmysqlclient.a <==========
 
+  # Static library 
+  #   (Unix/Linux/MacOS) .a
+  #   (Windows) .lib
+  # Dynamic library 
+  #   (Unix/Linux/MacOS) .so
+  #   (Windows) .dll
+
+  #apt-get install libssl-dev -> /usr/lib/x86_64-linux-gnu/libssl.a 
   target_link_libraries(main PRIVATE ssl)
+  #libssl-dev -> /usr/lib/x86_64-linux-gnu/libcrypto.a  
   target_link_libraries(main PRIVATE crypto)
+  #apt-get install libc6-dev -> /usr/lib/x86_64-linux-gnu/libpthread.a
   target_link_libraries(main PRIVATE pthread)
+  #libc6-dev /usr/lib/x86_64-linux-gnu/libpthread.a
   target_link_libraries(main PRIVATE dl)
+  #libc6-dev /usr/lib/x86_64-linux-gnu/libdl.a
   target_link_libraries(main PRIVATE m)
+  #apt-get install zlib1g-dev -> /usr/lib/x86_64-linux-gnu/libz.a
   target_link_libraries(main PRIVATE z)
 
   #========> Dependencies from libmysqlclient.a <==========
@@ -62,6 +108,14 @@ target_link_libraries(main PRIVATE mysqlpp)
 target_link_libraries(main PRIVATE drogon)
 
 #********* libdrogon *********
+
+# ***************** Conan Integration ***************
+
+target_link_libraries(main
+    PRIVATE ${CONAN_LIBS}
+)
+
+# ***************** Conan Integration ***************
 
 # VERY Important made your executable full static linked like golang
 target_link_options(main PRIVATE --static -static-libgcc -static-libstdc++)
