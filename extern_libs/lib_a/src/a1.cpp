@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-using namespace std;
+//using namespace std;
 
-const string getExternalLibA1( const string &strA1 ) {
+const std::string getExternalLibA1( const std::string &strA1 ) {
      
   return "External Lib A1 " + strA1;
 

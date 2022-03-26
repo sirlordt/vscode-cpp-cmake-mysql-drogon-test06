@@ -32,15 +32,27 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-set( CONAN_DISABLE_CHECK_COMPILER  1 )
+set(CONAN_DISABLE_CHECK_COMPILER True CACHE BOOL "" FORCE)
+#set(CONAN_DISABLE_CHECK_COMPILER true)
 
-conan_cmake_run(REQUIRES nlohmann_json/3.9.1
+conan_cmake_run(REQUIRES nlohmann_json/3.10.4
                 BASIC_SETUP)
 
-conan_cmake_run(REQUIRES fmt/7.1.3
+conan_cmake_run(REQUIRES fmt/8.0.1
                 BASIC_SETUP
 #                SETTINGS compiler.version=9.3;
                 BUILD missing)
+
+conan_cmake_run(REQUIRES rapidjson/cci.20211112
+                BASIC_SETUP ) 
+
+conan_cmake_run(REQUIRES mongo-cxx-driver/3.6.6
+                BASIC_SETUP
+                BUILD missing ) 
+
+conan_cmake_run(REQUIRES spdlog/1.9.2
+                BASIC_SETUP
+                BUILD missing ) 
 
 #include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 #conan_basic_setup()

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <typeinfo>       // operator typeid
 
 #define MYSQLPP_MYSQL_HEADERS_BURIED 1 //Accept headers with mysql/mysql.h, used in mysqlpp/common.h
 
@@ -12,6 +13,17 @@ using namespace drogon;
 
 #include <fmt/printf.h>
 #include <nlohmann/json.hpp>
+
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/stdx.hpp>
+#include <mongocxx/uri.hpp>
+#include <mongocxx/instance.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/array.hpp>
+
+#include "spdlog/spdlog.h"
 
 #include <iomanip>
 #include <iostream>
@@ -64,8 +76,8 @@ static void separator(ostream& os, string qstr) {
 // Print out the MySQL server version
 static void show_mysql_version(mysqlpp::Connection& con)
 {
-	separator( cout, "");
-  cout << "MySQL version: " << con.client_version();
+	separator( std::cout, "");
+  std::cout << "MySQL version: " << con.client_version();
 }
 
 
@@ -74,14 +86,14 @@ static void
 show_databases(mysqlpp::Connection& con)
 {
 	mysqlpp::Query query = con.query("show databases");
-	separator(cout, query.str());
+	separator( std::cout, query.str());
 	mysqlpp::StoreQueryResult res = query.store();
 
-	cout << "Databases found: " << res.size();
-	cout.setf(ios::left);
+	std::cout << "Databases found: " << res.size();
+	std::cout.setf(ios::left);
 	mysqlpp::StoreQueryResult::iterator rit;
 	for (rit = res.begin(); rit != res.end(); ++rit) {
-		cout << "\n\t" << (*rit)[0];
+		std::cout << "\n\t" << (*rit)[0];
 	}
 }
 
@@ -94,7 +106,7 @@ show_table_info(mysqlpp::Connection& con, const vector<string>& tables)
 	for (it = tables.begin(); it != tables.end(); ++it) {
 		mysqlpp::Query query = con.query();
 		query << "describe " << *it;
-		separator(cout, query.str());
+		separator(std::cout, query.str());
 		mysqlpp::StoreQueryResult res = query.store();
 
 		size_t columns = res.num_fields();
@@ -121,21 +133,21 @@ show_table_info(mysqlpp::Connection& con, const vector<string>& tables)
 			}
 
 			if (widths[i]) {
-				cout << '|' << setw(widths[i]) << 
+				std::cout << '|' << setw(widths[i]) << 
 						res.field_name(int(i)) << '|';
 			}
 		}
-		cout << endl;
+		std::cout << endl;
 
 		mysqlpp::StoreQueryResult::iterator rit;
 		for (rit = res.begin(); rit != res.end(); ++rit) {
 			for (unsigned int i = 0; i < columns; ++i) {
 				if (widths[i]) {
-					cout << ' ' << setw(widths[i]) <<
+					std::cout << ' ' << setw(widths[i]) <<
 							(*rit)[i].c_str() << ' ';
 				}
 			}
-			cout << endl;
+			std::cout << endl;
 		}
 	}
 }
@@ -146,11 +158,11 @@ static void
 show_tables(mysqlpp::Connection& con)
 {
 	mysqlpp::Query query = con.query("show tables");
-	separator(cout, query.str());
+	separator(std::cout, query.str());
 	mysqlpp::StoreQueryResult res = query.store();
 
-	cout << "Tables found: " << res.size();
-	cout.setf(ios::left);
+	std::cout << "Tables found: " << res.size();
+	std::cout.setf(ios::left);
 	vector<string> tables;
 	mysqlpp::StoreQueryResult::iterator rit;
 	for (rit = res.begin(); rit != res.end(); ++rit) {
@@ -221,6 +233,55 @@ int main( int argc, char **argv ) {
 	return -1;
 
   }
+
+  spdlog::info("Welcome to spdlog!");
+  spdlog::error("Some error message with arg: {}", 1);
+    
+  spdlog::warn("Easy padding in numbers like {:08d}", 12);
+  spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+  spdlog::info("Support for floats {:03.2f}", 1.23456);
+  spdlog::info("Positional args are {1} {0}..", "too", "supported");
+  spdlog::info("{:<30}", "left aligned");
+    
+  spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+  spdlog::debug("This message should be displayed..");    
+    
+  // change log pattern
+  spdlog::set_pattern("[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+    
+  // Compile time log levels
+  // define SPDLOG_ACTIVE_LEVEL to desired level
+  SPDLOG_TRACE("Some trace message with param {}", 42);
+  SPDLOG_DEBUG("Some debug message");  
+
+  // MongoDB
+  mongocxx::instance instance{}; // This should be done only once.
+  mongocxx::uri uri("mongodb://localhost:27017");
+  mongocxx::client client(uri);
+
+  mongocxx::database db = client["mydb"];
+  mongocxx::collection test = db["test"];
+
+  auto builder = bsoncxx::builder::stream::document{};
+  bsoncxx::document::value doc_value = builder
+                                             << "name" << "MongoDB"
+                                             << "type" << "database"
+                                             << "count" << 1
+                                             << "versions" 
+                                               << bsoncxx::builder::stream::open_array
+                                                 << "v3.2" << "v3.0" << "v2.6"
+                                               << bsoncxx::builder::stream::close_array
+                                             << "info" << bsoncxx::builder::stream::open_document
+                                               << "x" << 203
+                                               << "y" << 102
+                                             << bsoncxx::builder::stream::close_document
+                                             << bsoncxx::builder::stream::finalize;
+
+  bsoncxx::stdx::optional<mongocxx::result::insert_one> result = test.insert_one(doc_value.view());
+
+  //bsoncxx::document::element element = result.get().inserted_id().get_oid().value.to_string();
+  std::cout << result.get().inserted_id().get_oid().value.to_string() << std::endl;
+  //MongoDB
 
   MYSQL *con = mysql_init( NULL );
 
@@ -293,25 +354,52 @@ int main( int argc, char **argv ) {
 
   mysql_close( con );
 
+  nlohmann::json json = {
+    {"pi", 3.14},
+    {"happy", true},
+    {"name", "Kuba"},
+    {"nothing", nullptr},
+    {"answer", {
+        {"everything", 42}
+    }},
+    {"list", {1, 2, 3}},
+    {"object", {
+        {"currency", "PLN"},
+        {"value", 100.0}
+    }}
+  };
 
-    nlohmann::json json = {
-        {"pi", 3.14},
-        {"happy", true},
-        {"name", "Kuba"},
-        {"nothing", nullptr},
-        {"answer", {
-            {"everything", 42}
-        }},
-        {"list", {1, 2, 3}},
-        {"object", {
-            {"currency", "PLN"},
-            {"value", 100.0}
-        }}
-    };
+  //fmt::format("{}", json);
+  fmt::print("JSON: {}\n", json.dump());
 
-    fmt::print("JSON: {}\n", json);
+  std::string helloWorld = "Hello World";
 
-  //std::string key;
+  std::map<std::string,std::any> x = { { "1", 11 }, { "2", std::make_any<std::string>( helloWorld ) } };
+
+  std::any a = 1;
+  std::cout << a.type().name() << ": " << std::any_cast<int>(a) << '\n';
+  a = 3.14;
+  std::cout << a.type().name() << ": " << std::any_cast<double>(a) << '\n';
+  a = true;
+  std::cout << a.type().name() << ": " << std::any_cast<bool>(a) << '\n';
+  a = std::make_any<std::string>(helloWorld);
+  std::cout << a.type().name() << ": " << std::any_cast<std::string>(a) << '\n';
+
+  if ( x[ "1" ].type().name() == "" ) {
+
+
+  }
+
+  std::cout << std::any_cast<int>( x[ "1" ] ) << std::endl;
+  std::cout << std::any_cast<std::string>( x[ "2" ] ) << std::endl;
+
+  std::string hello = "Hello";
+  std::string world = "World";
+
+  //void *x = decltype( key );
+
+  std::cout << typeid(hello).name() << std::endl;
+  std::cout << typeid(world).name() << std::endl;
 
   std::cout << "Wainting for enter" << std::endl;
   std::cin.get(); // >> key;

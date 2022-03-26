@@ -1,8 +1,8 @@
 #include "a2.h"
 
-using namespace std;
+//using namespace std;
 
-const string getExternalLibA2( const string &strA2 ) {
+const std::string getExternalLibA2( const std::string &strA2 ) {
      
   return "External Lib A2 " + strA2;
 
